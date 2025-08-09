@@ -1,0 +1,87 @@
+// {
+//     // Use IntelliSense to learn about possible attributes.
+//     // Hover to view descriptions of existing attributes.
+//     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+//     "version": "0.2.0",
+//     "configurations": [
+    
+//         {
+//             "name": "Debug Android",
+//             "cwd": "${workspaceFolder}",
+//             "type": "reactnative",
+//             "request": "launch",
+//             "platform": "android"
+//         }
+//     ]
+// }
+
+// {
+//     "version": "0.2.0",
+//     "configurations": [
+//         {
+//             "name": "Debug Android (npx)",
+//             "type": "reactnative",
+//             "request": "launch",
+//             "platform": "android",
+//             "cwd": "${workspaceFolder}",
+//             // "target": "device", 
+//             "target": "simulator", 
+//             "sourceMaps": true,
+//             "enableDebug": true,
+//             "runArguments": [
+//                 // "--no-packager" 
+//             ]
+//         },
+//         {
+//             "name": "Attach to Packager",
+//             "type": "reactnative",
+//             "request": "attach",
+//             "cwd": "${workspaceFolder}",
+//             "sourceMaps": true
+//         }
+//     ]
+// }
+
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Android (Hybrid Metro)",
+            "type": "reactnative",
+            "request": "launch",
+            "platform": "android",
+            "cwd": "${workspaceFolder}",
+            "target": "simulator",
+            "sourceMaps": true,
+            "enableDebug": true,
+            "runArguments": [],
+            // "env": {
+            //     "ANDROID_HOME": "C:\\Users\\<your-username>\\AppData\\Local\\Android\\Sdk",
+            //     "PATH": "${env:PATH};C:\\Users\\<your-username>\\AppData\\Local\\Android\\Sdk\\platform-tools"
+            // },
+            "preLaunchTask": "Start Metro If Not Running"
+        },
+        {
+            "name": "Attach to Packager",
+            "type": "reactnative",
+            "request": "attach",
+            "cwd": "${workspaceFolder}",
+            "sourceMaps": true
+        }
+    ],
+    "tasks": {
+        "version": "2.0.0",
+        "tasks": [
+            {
+                "label": "Start Metro If Not Running",
+                "type": "shell",
+                "command": "powershell",
+                "args": [
+                    "-Command",
+                    "if (-not (Get-NetTCPConnection -State Listen -LocalPort 8081 -ErrorAction SilentlyContinue)) { npx react-native start }"
+                ],
+                "problemMatcher": []
+            }
+        ]
+    }
+}
