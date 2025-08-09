@@ -60,7 +60,7 @@ export default function HomeScreen() {
         const item = items[i];
         const title = item.querySelector('h3').innerText;
         const url = item.href;
-        const imageDiv = aarecordList.querySelector('div[id^="list_cover_aarecord_id__md5:"]');
+        const imageDiv = item.querySelector('div[id^="list_cover_aarecord_id__md5:"]');
         let image = null;
         if (imageDiv) {
             const imgTag = imageDiv.querySelector('img');
@@ -127,6 +127,7 @@ export default function HomeScreen() {
           placeholder="Enter search term"
           value={searchQuery}
           onChangeText={setSearchQuery}
+          onSubmitEditing={handleSearch}
           placeholderTextColor={Colors[colorScheme ?? 'light'].text}
         />
         <TouchableOpacity
@@ -143,8 +144,7 @@ export default function HomeScreen() {
           <Text style={{ color: Colors[colorScheme ?? 'light'].background, fontWeight: 'bold' }}>
             Search
           </Text>
-        </TouchableOpacity>  
-        {/* <Button title="Search" onPress={handleSearch} color={Colors[colorScheme ?? 'light'].tint} /> */}
+        </TouchableOpacity>
       </View>
       {loading && <ActivityIndicator size="large" color={Colors[colorScheme ?? 'light'].tint} />}
       {results.length > 0 && (
@@ -153,7 +153,11 @@ export default function HomeScreen() {
           keyExtractor={(item, index) => index.toString()}
           renderItem={({ item }) => (
             <View style={styles.resultItem}>
-              {item.image && <Image source={{ uri: item.image }} style={styles.image} />}
+              {item.image ? (
+                <Image source={{ uri: item.image }} style={styles.image} />
+              ) : (
+                <View style={[styles.image, { backgroundColor: 'white' }]} />
+              )}
               <View style={styles.resultTextContainer}>
                 <Text selectable={true} style={{ color: Colors[colorScheme ?? 'light'].text }}>{item.title}</Text>
                 {item.slowLink ? (
@@ -166,6 +170,7 @@ export default function HomeScreen() {
               </View>
             </View>
           )}
+          ListFooterComponent={scraping ? <ActivityIndicator size="large" color={Colors[colorScheme ?? 'light'].tint} /> : null}
         />
       )}
       {(loading || scraping) && (
