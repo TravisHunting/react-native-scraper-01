@@ -1,12 +1,12 @@
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
+import * as FileSystem from 'expo-file-system';
 import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
   Image,
-  Linking,
   Platform,
   StyleSheet,
   Text,
@@ -15,6 +15,7 @@ import {
   useColorScheme,
   View
 } from 'react-native';
+import Toast from 'react-native-root-toast';
 import { WebView } from 'react-native-webview';
 
 export default function HomeScreen() {
@@ -50,6 +51,38 @@ export default function HomeScreen() {
       } else {
         setScraping(false);
       }
+    } else if (data.type === 'download-link') {
+      downloadFile(data.payload);
+    } else if (data.type === 'timer') {
+      try {
+        Toast.show(`Download will be ready in ${data.payload} seconds`, {
+          duration: 3000,
+          position: Toast.positions.BOTTOM,
+          shadow: true,
+          animation: true,
+          hideOnPress: true,
+          delay: 0,
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
+
+  const downloadFile = async (url: string) => {
+    const fileName = url.split('/').pop();
+    const fileUri = FileSystem.documentDirectory + fileName;
+
+    try {
+      const { uri } = await FileSystem.downloadAsync(url, fileUri);
+      Toast.show(`Downloaded ${fileName} to app's directory`, {
+        duration: Toast.durations.LONG,
+      });
+    } catch (e) {
+      console.error(e);
+      Toast.show('Download failed', {
+        duration: Toast.durations.LONG,
+      });
     }
   };
 
@@ -85,17 +118,27 @@ export default function HomeScreen() {
     }
   `;
 
-  const turnstileJs = `
-    const interval = setInterval(() => {
-      const iframe = document.querySelector('iframe[src*="challenges.cloudflare.com"]');
-      if (iframe) {
-        const checkbox = iframe.contentDocument.querySelector('input[type="checkbox"]');
-        if (checkbox) {
-          setTimeout(() => {
-            checkbox.click();
-            clearInterval(interval);
-          }, 2000);
+  // Write this javascript into the DOM directly so annas archive doesn't fuck with it (and to facilitate debugging)
+  const downloadNowJs = `
+    window.__RNWebViewDebug = function() {
+      const downloadInterval = setInterval(() => {
+        const downloadButton = document.querySelector('p.mb-4.text-xl.font-bold a');
+        if (downloadButton) {
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: 'download-link',
+            payload: downloadButton.href
+          }));
+          clearInterval(downloadInterval);
         }
+      }, 1000);
+    };
+    window.__RNWebViewDebug();
+
+    const timerInterval = setInterval(() => {
+      const timer = document.querySelector('span.js-partner-countdown');
+      if (timer) {
+        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'timer', payload: timer.innerText }));
+        clearInterval(timerInterval);
       }
     }, 1000);
   `;
@@ -149,8 +192,11 @@ export default function HomeScreen() {
           <Text style={{ color: Colors[colorScheme ?? 'light'].tint, padding: 10 }}>Close</Text>
         </TouchableOpacity>
         <WebView
+          ref={webviewRef}
           source={{ uri: selectedUrl }}
-          injectedJavaScript={turnstileJs}
+          injectedJavaScript={downloadNowJs}
+          onMessage={handleMessage}
+          webviewDebuggingEnabled={true}
         />
       </View>
     );
