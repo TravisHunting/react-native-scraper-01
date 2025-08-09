@@ -1,22 +1,21 @@
-import { useState, useRef } from 'react';
-import {
-  StyleSheet,
-  TextInput,
-  Button,
-  FlatList,
-  Text,
-  View,
-  ActivityIndicator,
-  useColorScheme,
-  Linking,
-  TouchableOpacity,
-  Image,
-  Platform,
-} from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { WebView } from 'react-native-webview';
 import { Colors } from '@/constants/Colors';
+import { useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  Image,
+  Linking,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  useColorScheme,
+  View
+} from 'react-native';
+import { WebView } from 'react-native-webview';
 
 export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -130,7 +129,22 @@ export default function HomeScreen() {
           onChangeText={setSearchQuery}
           placeholderTextColor={Colors[colorScheme ?? 'light'].text}
         />
-        <Button title="Search" onPress={handleSearch} color={Colors[colorScheme ?? 'light'].tint} />
+        <TouchableOpacity
+          style={{
+            backgroundColor: Colors[colorScheme ?? 'light'].tint,
+            paddingVertical: 10,
+            paddingHorizontal: 16,
+            borderRadius: 4,
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+          onPress={handleSearch}
+        >
+          <Text style={{ color: Colors[colorScheme ?? 'light'].background, fontWeight: 'bold' }}>
+            Search
+          </Text>
+        </TouchableOpacity>  
+        {/* <Button title="Search" onPress={handleSearch} color={Colors[colorScheme ?? 'light'].tint} /> */}
       </View>
       {loading && <ActivityIndicator size="large" color={Colors[colorScheme ?? 'light'].tint} />}
       {results.length > 0 && (
@@ -164,6 +178,7 @@ export default function HomeScreen() {
           }}
           onMessage={handleMessage}
           injectedJavaScript={scraping ? getSlowLinkJs(currentResultIndex) : getInitialResultsJs}
+          style={{ width: 0, height: 0, opacity: 0 }} // Hide the WebView
         />
       )}
     </ThemedView>
