@@ -1,12 +1,12 @@
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
+import * as FileSystem from 'expo-file-system';
 import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
   Image,
-  Linking,
   Platform,
   StyleSheet,
   Text,
@@ -15,9 +15,8 @@ import {
   useColorScheme,
   View
 } from 'react-native';
-import { WebView } from 'react-native-webview';
-import * as FileSystem from 'expo-file-system';
 import Toast from 'react-native-root-toast';
+import { WebView } from 'react-native-webview';
 
 export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -119,16 +118,27 @@ export default function HomeScreen() {
     }
   `;
 
+  // Write this javascript into the DOM directly so annas archive doesn't fuck with it (and to facilitate debugging)
   const downloadNowJs = `
-    const interval = setInterval(() => {
-      const downloadButton = document.querySelector('p.mb-4.text-xl.font-bold a');
-      if (downloadButton) {
-        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'download-link', payload: downloadButton.href }));
-        clearInterval(interval);
-      }
+    window.__RNWebViewDebug = function() {
+      const downloadInterval = setInterval(() => {
+        const downloadButton = document.querySelector('p.mb-4.text-xl.font-bold a');
+        if (downloadButton) {
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: 'download-link',
+            payload: downloadButton.href
+          }));
+          clearInterval(downloadInterval);
+        }
+      }, 1000);
+    };
+    window.__RNWebViewDebug();
+
+    const timerInterval = setInterval(() => {
       const timer = document.querySelector('span.js-partner-countdown');
       if (timer) {
         window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'timer', payload: timer.innerText }));
+        clearInterval(timerInterval);
       }
     }, 1000);
   `;
