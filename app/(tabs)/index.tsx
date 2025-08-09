@@ -23,6 +23,8 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(false);
   const [scraping, setScraping] = useState(false);
   const [currentResultIndex, setCurrentResultIndex] = useState(0);
+  const [selectedUrl, setSelectedUrl] = useState<string | null>(null);
+  const [clickedLinks, setClickedLinks] = useState<string[]>([]);
   const webviewRef = useRef<WebView>(null);
   const colorScheme = useColorScheme();
 
@@ -83,6 +85,21 @@ export default function HomeScreen() {
     }
   `;
 
+  const turnstileJs = `
+    const interval = setInterval(() => {
+      const iframe = document.querySelector('iframe[src*="challenges.cloudflare.com"]');
+      if (iframe) {
+        const checkbox = iframe.contentDocument.querySelector('input[type="checkbox"]');
+        if (checkbox) {
+          setTimeout(() => {
+            checkbox.click();
+            clearInterval(interval);
+          }, 2000);
+        }
+      }
+    }, 1000);
+  `;
+
   const styles = StyleSheet.create({
     container: {
       flex: 1,
@@ -115,8 +132,29 @@ export default function HomeScreen() {
         width: 100,
         height: 100,
         marginRight: 10,
+    },
+    titleText: {
+      fontSize: 18,
+      fontWeight: 'bold',
+    },
+    clickedLink: {
+      color: 'purple',
     }
   });
+
+  if (selectedUrl) {
+    return (
+      <View style={{ flex: 1, paddingTop: Platform.OS === 'android' ? 40 : 16 }}>
+        <TouchableOpacity onPress={() => setSelectedUrl(null)}>
+          <Text style={{ color: Colors[colorScheme ?? 'light'].tint, padding: 10 }}>Close</Text>
+        </TouchableOpacity>
+        <WebView
+          source={{ uri: selectedUrl }}
+          injectedJavaScript={turnstileJs}
+        />
+      </View>
+    );
+  }
 
   return (
     <ThemedView style={styles.container}>
@@ -159,10 +197,13 @@ export default function HomeScreen() {
                 <View style={[styles.image, { backgroundColor: 'white' }]} />
               )}
               <View style={styles.resultTextContainer}>
-                <Text selectable={true} style={{ color: Colors[colorScheme ?? 'light'].text }}>{item.title}</Text>
+                <Text selectable={true} style={[styles.titleText, { color: Colors[colorScheme ?? 'light'].text }]}>{item.title}</Text>
                 {item.slowLink ? (
-                  <TouchableOpacity onPress={() => Linking.openURL(item.slowLink)}>
-                    <Text selectable={true} style={styles.link}>{item.slowLink}</Text>
+                  <TouchableOpacity onPress={() => {
+                    setSelectedUrl(item.slowLink);
+                    setClickedLinks([...clickedLinks, item.slowLink]);
+                  }}>
+                    <Text selectable={true} style={[styles.link, clickedLinks.includes(item.slowLink) && styles.clickedLink]}>{item.slowLink}</Text>
                   </TouchableOpacity>
                 ) : (
                   <ActivityIndicator color={Colors[colorScheme ?? 'light'].tint} />
