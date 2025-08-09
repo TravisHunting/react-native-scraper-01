@@ -1,12 +1,12 @@
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
+import * as FileSystem from 'expo-file-system';
 import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
   Image,
-  Linking,
   Platform,
   StyleSheet,
   Text,
@@ -15,9 +15,8 @@ import {
   useColorScheme,
   View
 } from 'react-native';
-import { WebView } from 'react-native-webview';
-import * as FileSystem from 'expo-file-system';
 import Toast from 'react-native-root-toast';
+import { WebView } from 'react-native-webview';
 
 export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -173,9 +172,11 @@ export default function HomeScreen() {
           <Text style={{ color: Colors[colorScheme ?? 'light'].tint, padding: 10 }}>Close</Text>
         </TouchableOpacity>
         <WebView
+          ref={webviewRef}
           source={{ uri: selectedUrl }}
           injectedJavaScript={downloadNowJs}
           onMessage={handleMessage}
+          webviewDebuggingEnabled={true}
         />
       </View>
     );
