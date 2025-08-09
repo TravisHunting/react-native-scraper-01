@@ -1,12 +1,12 @@
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
-import * as FileSystem from 'expo-file-system';
 import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
   Image,
+  Linking,
   Platform,
   StyleSheet,
   Text,
@@ -15,8 +15,9 @@ import {
   useColorScheme,
   View
 } from 'react-native';
-import Toast from 'react-native-root-toast';
 import { WebView } from 'react-native-webview';
+import * as FileSystem from 'expo-file-system';
+import Toast from 'react-native-root-toast';
 
 export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -54,9 +55,18 @@ export default function HomeScreen() {
     } else if (data.type === 'download-link') {
       downloadFile(data.payload);
     } else if (data.type === 'timer') {
-      Toast.show(`Download will be ready in ${data.payload} seconds`, {
-        duration: Toast.durations.LONG,
-      });
+      try {
+        Toast.show(`Download will be ready in ${data.payload} seconds`, {
+          duration: 3000,
+          position: Toast.positions.BOTTOM,
+          shadow: true,
+          animation: true,
+          hideOnPress: true,
+          delay: 0,
+        });
+      } catch (e) {
+        console.error(e);
+      }
     }
   };
 
@@ -111,14 +121,14 @@ export default function HomeScreen() {
 
   const downloadNowJs = `
     const interval = setInterval(() => {
-      const timer = document.querySelector('span.js-partner-countdown');
-      if (timer) {
-        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'timer', payload: timer.innerText }));
-      }
-      const downloadButton = document.querySelector('a[href*="momot.rs"]');
+      const downloadButton = document.querySelector('p.mb-4.text-xl.font-bold a');
       if (downloadButton) {
         window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'download-link', payload: downloadButton.href }));
         clearInterval(interval);
+      }
+      const timer = document.querySelector('span.js-partner-countdown');
+      if (timer) {
+        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'timer', payload: timer.innerText }));
       }
     }, 1000);
   `;
