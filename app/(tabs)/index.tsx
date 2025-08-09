@@ -2,6 +2,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -69,6 +70,23 @@ export default function HomeScreen() {
     }
   };
 
+  // const downloadFile_OLD = async (url: string) => {
+  //   const fileName = url.split('/').pop();
+  //   const fileUri = FileSystem.documentDirectory + fileName;
+
+  //   try {
+  //     const { uri } = await FileSystem.downloadAsync(url, fileUri);
+  //     Toast.show(`Downloaded ${fileName} to app's directory`, {
+  //       duration: Toast.durations.LONG,
+  //     });
+  //   } catch (e) {
+  //     console.error(e);
+  //     Toast.show('Download failed', {
+  //       duration: Toast.durations.LONG,
+  //     });
+  //   }
+  // };
+
   const downloadFile = async (url: string) => {
     const fileName = url.split('/').pop();
     const fileUri = FileSystem.documentDirectory + fileName;
@@ -78,6 +96,15 @@ export default function HomeScreen() {
       Toast.show(`Downloaded ${fileName} to app's directory`, {
         duration: Toast.durations.LONG,
       });
+
+      // Prompt user to share or save the file to another location
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri);
+      } else {
+        Toast.show('Sharing is not available on this device', {
+          duration: Toast.durations.LONG,
+        });
+      }
     } catch (e) {
       console.error(e);
       Toast.show('Download failed', {
@@ -85,6 +112,7 @@ export default function HomeScreen() {
       });
     }
   };
+
 
   const getInitialResultsJs = `
     const results = [];
