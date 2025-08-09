@@ -1,7 +1,7 @@
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -16,6 +16,8 @@ import {
   View
 } from 'react-native';
 import { WebView } from 'react-native-webview';
+import * as FileSystem from 'expo-file-system';
+import * as Notifications from 'expo-notifications';
 
 export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -27,6 +29,33 @@ export default function HomeScreen() {
   const [clickedLinks, setClickedLinks] = useState<string[]>([]);
   const webviewRef = useRef<WebView>(null);
   const colorScheme = useColorScheme();
+
+  useEffect(() => {
+    registerForPushNotificationsAsync();
+  }, []);
+
+  const registerForPushNotificationsAsync = async () => {
+    let token;
+    if (Platform.OS === 'android') {
+      await Notifications.setNotificationChannelAsync('default', {
+        name: 'default',
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#FF231F7C',
+      });
+    }
+
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+    if (finalStatus !== 'granted') {
+      alert('Failed to get push token for push notification!');
+      return;
+    }
+  };
 
   const handleSearch = () => {
     setLoading(true);
@@ -50,6 +79,43 @@ export default function HomeScreen() {
       } else {
         setScraping(false);
       }
+    } else if (data.type === 'download-link') {
+      downloadFile(data.payload);
+    }
+  };
+
+  const downloadFile = async (url: string) => {
+    const fileName = url.split('/').pop();
+    const fileUri = FileSystem.documentDirectory + fileName;
+
+    const downloadResumable = FileSystem.createDownloadResumable(
+      url,
+      fileUri,
+      {},
+      (downloadProgress) => {
+        const progress = downloadProgress.totalBytesWritten / downloadProgress.totalBytesExpectedToWrite;
+        Notifications.scheduleNotificationAsync({
+          content: {
+            title: `Downloading ${fileName}`,
+            body: `${(progress * 100).toFixed(2)}%`,
+            data: { progress },
+          },
+          trigger: null,
+        });
+      }
+    );
+
+    try {
+      const { uri } = await downloadResumable.downloadAsync();
+      Notifications.scheduleNotificationAsync({
+        content: {
+          title: `Download Complete!`,
+          body: `${fileName} has been downloaded.`,
+        },
+        trigger: null,
+      });
+    } catch (e) {
+      console.error(e);
     }
   };
 
@@ -95,6 +161,12 @@ export default function HomeScreen() {
             checkbox.click();
             clearInterval(interval);
           }, 2000);
+        }
+      } else {
+        const downloadButton = document.querySelector('a[href*="momot.rs"]');
+        if (downloadButton) {
+          window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'download-link', payload: downloadButton.href }));
+          clearInterval(interval);
         }
       }
     }, 1000);
@@ -151,6 +223,7 @@ export default function HomeScreen() {
         <WebView
           source={{ uri: selectedUrl }}
           injectedJavaScript={turnstileJs}
+          onMessage={handleMessage}
         />
       </View>
     );
